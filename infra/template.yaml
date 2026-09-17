@@ -105,7 +105,6 @@ Resources:
       Architectures: [x86_64]
       MemorySize: 512
       Timeout: 28
-      ReservedConcurrentExecutions: 2
       Environment:
         Variables:
           APP_MODE: aws

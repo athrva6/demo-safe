@@ -41,3 +41,5 @@ VITE_COGNITO_USER_POOL_CLIENT_ID=YOUR_CLIENT_ID
 ```
 
 Keep AWS credentials out of the frontend and out of Git. Deploy the frontend with Amplify Hosting after the backend works locally.
+
+The Lambda function intentionally uses the account's unreserved concurrency pool. This keeps the stack compatible with student accounts that have a low initial concurrency quota; API Gateway throttling still limits request bursts.
