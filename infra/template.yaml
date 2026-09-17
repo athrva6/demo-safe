@@ -135,6 +135,15 @@ Resources:
               Action: textract:DetectDocumentText
               Resource: "*"
       Events:
+        PublicPreflight:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref Api,
+              Path: "/api/{proxy+}",
+              Method: OPTIONS,
+              Auth: { Authorizer: NONE },
+            }
         ProtectedApi:
           Type: HttpApi
           Properties: { ApiId: !Ref Api, Path: "/api/{proxy+}", Method: ANY }
