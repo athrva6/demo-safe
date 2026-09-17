@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: DemoSafe screenshot review and controlled sharing backend
+Parameters:
+  FrontendOrigin:
+    Type: String
+    Default: http://127.0.0.1:5173
+    Description: Exact frontend origin, without a trailing slash. Update after Amplify hosting.
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows: [ALLOW_USER_SRP_AUTH, ALLOW_REFRESH_TOKEN_AUTH]
+  SharesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      LifecycleConfiguration:
+        Rules:
+          - Id: RemoveOldPublishedImages
+            Status: Enabled
+            Prefix: published/
+            ExpirationInDays: 8
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 }
+  SharesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SharesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource: [!GetAtt SharesBucket.Arn, !Sub "${SharesBucket.Arn}/*"]
+            Condition: { Bool: { "aws:SecureTransport": "false" } }
+  SharesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: id, AttributeType: S }
+        - { AttributeName: owner, AttributeType: S }
+        - { AttributeName: created_at, AttributeType: N }
+      KeySchema: [{ AttributeName: id, KeyType: HASH }]
+      GlobalSecondaryIndexes:
+        - IndexName: ByOwner
+          KeySchema:
+            [
+              { AttributeName: owner, KeyType: HASH },
+              { AttributeName: created_at, KeyType: RANGE },
+            ]
+          Projection: { ProjectionType: ALL }
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+      SSESpecification: { SSEEnabled: true }
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: [!Ref FrontendOrigin]
+        AllowHeaders: [Authorization, Content-Type]
+        AllowMethods: [GET, POST, DELETE, OPTIONS]
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 5
+        ThrottlingRateLimit: 2
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}"
+              audience: [!Ref UserPoolClient]
+            AuthorizationScopes: [aws.cognito.signin.user.admin]
+  Backend:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/
+      Handler: app.main.handler
+      Runtime: python3.12
+      Architectures: [x86_64]
+      MemorySize: 512
+      Timeout: 28
+      ReservedConcurrentExecutions: 2
+      Environment:
+        Variables:
+          APP_MODE: aws
+          SCAN_PROVIDER: textract
+          SHARES_BUCKET: !Ref SharesBucket
+          SHARES_TABLE: !Ref SharesTable
+          ALLOWED_ORIGINS: !Ref FrontendOrigin
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub "${SharesBucket.Arn}/published/*"
+            - Effect: Allow
+              Action:
+                [
+                  dynamodb:GetItem,
+                  dynamodb:PutItem,
+                  dynamodb:UpdateItem,
+                  dynamodb:Query,
+                ]
+              Resource:
+                [
+                  !GetAtt SharesTable.Arn,
+                  !Sub "${SharesTable.Arn}/index/ByOwner",
+                ]
+            - Effect: Allow
+              Action: textract:DetectDocumentText
+              Resource: "*"
+      Events:
+        ProtectedApi:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: "/api/{proxy+}", Method: ANY }
+        PublicHealth:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref Api,
+              Path: /api/health,
+              Method: GET,
+              Auth: { Authorizer: NONE },
+            }
+        PublicMetadata:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref Api,
+              Path: "/api/public/{token}",
+              Method: GET,
+              Auth: { Authorizer: NONE },
+            }
+        PublicImage:
+          Type: HttpApi
+          Properties:
+            {
+              ApiId: !Ref Api,
+              Path: "/api/public/{token}/content",
+              Method: GET,
+              Auth: { Authorizer: NONE },
+            }
+  BackendLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Backend}"
+      RetentionInDays: 7
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com"
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+  SharesBucketName:
+    Value: !Ref SharesBucket
