@@ -652,11 +652,11 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                   <div className="scan-card">
                     <strong>AWS detection</strong>
                     <p>
-                      {health?.scanner === "textract"
-                        ? "Suggest areas containing supported secrets and personal details."
-                        : "Manual redaction is ready. Connect Textract to enable automatic suggestions."}
+                      {health?.scanner === "rekognition" || health?.scanner === "textract"
+                        ? `Amazon ${health.scanner === "rekognition" ? "Rekognition" : "Textract"} suggests areas containing supported secrets and personal details.`
+                        : "Manual redaction is ready. Connect AWS OCR to enable automatic suggestions."}
                     </p>
-                    {health?.scanner === "textract" && (
+                    {(health?.scanner === "rekognition" || health?.scanner === "textract") && (
                       <label className="check-line">
                         <input
                           type="checkbox"
@@ -671,7 +671,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                       onClick={() => void scan()}
                       disabled={
                         !image ||
-                        health?.scanner !== "textract" ||
+                        !["rekognition", "textract"].includes(health?.scanner || "") ||
                         !cloudConsent ||
                         Boolean(busy)
                       }

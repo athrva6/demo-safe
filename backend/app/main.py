@@ -13,7 +13,7 @@ from mangum import Mangum
 from PIL import Image, ImageOps, UnidentifiedImageError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from .detection import find_sensitive
+from .detection import find_sensitive, rekognition_blocks
 from .storage import AwsStore, LocalStore
 
 MAX_BYTES = 3 * 1024 * 1024
@@ -111,18 +111,24 @@ async def health():
 
 @app.post("/api/scan")
 async def scan(file: UploadFile = File(...), user: str = Depends(owner)):
-    if os.getenv("SCAN_PROVIDER", "manual") != "textract":
+    provider = os.getenv("SCAN_PROVIDER", "manual")
+    if provider not in {"textract", "rekognition"}:
         raise HTTPException(503, "AWS scanning is not configured. Manual redaction is available.")
     image = normalize_image(file)
     try:
         import boto3
         from botocore.config import Config
-        client = boto3.client("textract", config=Config(connect_timeout=3, read_timeout=18, retries={"total_max_attempts": 1}))
-        result = client.detect_document_text(Document={"Bytes": image})
+        config = Config(connect_timeout=3, read_timeout=18, retries={"total_max_attempts": 1})
+        if provider == "rekognition":
+            result = boto3.client("rekognition", config=config).detect_text(Image={"Bytes": image})
+            blocks = rekognition_blocks(result.get("TextDetections", []))
+        else:
+            result = boto3.client("textract", config=config).detect_document_text(Document={"Bytes": image})
+            blocks = result.get("Blocks", [])
     except Exception:
         # Do not expose provider errors containing request data or credentials.
-        raise HTTPException(502, "AWS scan could not finish. Check backend credentials, region, and Textract permission, or continue manually.") from None
-    return {"status": "complete", "findings": find_sensitive(result.get("Blocks", [])), "notice": "Review every suggestion. OCR and detection can miss exposures."}
+        raise HTTPException(502, "AWS scan could not finish. Check backend credentials, region, and OCR permission, or continue manually.") from None
+    return {"status": "complete", "provider": provider, "findings": find_sensitive(blocks), "notice": "Review every suggestion. OCR and detection can miss exposures."}
 
 
 @app.post("/api/shares", status_code=201)

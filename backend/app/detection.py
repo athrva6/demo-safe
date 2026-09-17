@@ -1,4 +1,4 @@
-"""Conservative, reviewable rules over Textract words; no raw text in findings."""
+"""Conservative, reviewable rules over AWS OCR words; no raw text in findings."""
 import re
 
 RULES = [
@@ -13,6 +13,31 @@ RULES = [
     ("AWS ARN", re.compile(r"\barn:aws(?:-[a-z]+)?:[A-Za-z0-9-]+:[A-Za-z0-9-]*:\d{12}:[^\s\"']+\b", re.I), 0, "Identifies an AWS account and resource."),
     ("SSH key name", re.compile(r"--key-name\s+([^\s\"']+)", re.I), 1, "May reveal the name of an SSH key used to access an instance."),
 ]
+
+
+def rekognition_blocks(detections: list[dict]) -> list[dict]:
+    """Convert Rekognition text detections into the block shape used by the rules."""
+    child_ids: dict[str, list[str]] = {}
+    for detection in detections:
+        if detection.get("Type") == "WORD" and detection.get("ParentId") is not None:
+            child_ids.setdefault(str(detection["ParentId"]), []).append(str(detection["Id"]))
+
+    blocks = []
+    for detection in detections:
+        block_type = detection.get("Type")
+        if block_type not in {"LINE", "WORD"}:
+            continue
+        identifier = str(detection.get("Id"))
+        block = {
+            "Id": identifier,
+            "BlockType": block_type,
+            "Text": detection.get("DetectedText", ""),
+            "Geometry": detection.get("Geometry", {}),
+        }
+        if block_type == "LINE" and child_ids.get(identifier):
+            block["Relationships"] = [{"Type": "CHILD", "Ids": child_ids[identifier]}]
+        blocks.append(block)
+    return blocks
 
 
 def find_sensitive(blocks: list[dict]) -> list[dict]:

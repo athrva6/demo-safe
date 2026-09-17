@@ -108,7 +108,7 @@ Resources:
       Environment:
         Variables:
           APP_MODE: aws
-          SCAN_PROVIDER: textract
+          SCAN_PROVIDER: rekognition
           SHARES_BUCKET: !Ref SharesBucket
           SHARES_TABLE: !Ref SharesTable
           ALLOWED_ORIGINS: !Ref FrontendOrigin
@@ -132,7 +132,7 @@ Resources:
                   !Sub "${SharesTable.Arn}/index/ByOwner",
                 ]
             - Effect: Allow
-              Action: textract:DetectDocumentText
+              Action: rekognition:DetectText
               Resource: "*"
       Events:
         PublicPreflight:

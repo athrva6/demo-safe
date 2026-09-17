@@ -10,7 +10,7 @@ DemoSafe is entered in the **Ship It** track because the goal is a deployed appl
 | Cognito | Signs users in and protects owner actions. |
 | API Gateway | Exposes the `/api` routes to the frontend. |
 | Lambda | Runs the FastAPI backend without an EC2 server. |
-| Textract | Extracts text and bounding boxes from uploaded screenshots. |
+| Rekognition | Extracts text and bounding boxes from uploaded screenshots. |
 | S3 | Stores only normalized, redacted PNGs in a private bucket. |
 | DynamoDB | Stores share owner, expiry, and revocation state. |
 | CloudWatch | Keeps Lambda logs for debugging and the demo. |
@@ -27,6 +27,6 @@ The complete service definitions and least-privilege Lambda permissions are in [
 
 ## What to show judges
 
-`Upload → Textract scan → review findings → flattened redacted PNG → expiring share → revoke`
+`Upload → Rekognition scan → review findings → flattened redacted PNG → expiring share → revoke`
 
 EC2 and security groups are not part of this architecture.
