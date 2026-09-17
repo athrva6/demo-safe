@@ -123,6 +123,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
   const [selected, setSelected] = useState("");
   const [reviewed, setReviewed] = useState(false);
   const [cloudConsent, setCloudConsent] = useState(false);
+  const [scanSummary, setScanSummary] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -178,6 +179,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
       setMasks([]);
       setSelected("");
       setCloudConsent(false);
+      setScanSummary("");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -202,6 +204,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
     setBusy("Scanning with AWS");
     setError("");
     setNotice("");
+    setScanSummary("");
     try {
       // Normalize orientation exactly as in the editor before sending to OCR.
       const form = new FormData();
@@ -232,6 +235,11 @@ function Workspace({ signOut }: { signOut?: () => void }) {
         ...suggestions,
       ]);
       setSelected("");
+      setScanSummary(
+        suggestions.length
+          ? `Scan completed: ${suggestions.length} suggestion${suggestions.length === 1 ? "" : "s"} added. Review each highlighted area.`
+          : "Scan completed: no supported sensitive text was detected. Review the image and add masks manually.",
+      );
       setNotice(
         `${suggestions.length} suggestions. Review the full screenshot; detection can miss sensitive content.`,
       );
@@ -644,11 +652,11 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                   <div className="scan-card">
                     <strong>AWS detection</strong>
                     <p>
-                      {health?.scanner === "textract"
-                        ? "Suggest areas containing supported secrets and personal details."
-                        : "Manual redaction is ready. Connect Textract to enable automatic suggestions."}
+                      {health?.scanner === "rekognition" || health?.scanner === "textract"
+                        ? `Amazon ${health.scanner === "rekognition" ? "Rekognition" : "Textract"} suggests areas containing supported secrets and personal details.`
+                        : "Manual redaction is ready. Connect AWS OCR to enable automatic suggestions."}
                     </p>
-                    {health?.scanner === "textract" && (
+                    {(health?.scanner === "rekognition" || health?.scanner === "textract") && (
                       <label className="check-line">
                         <input
                           type="checkbox"
@@ -663,7 +671,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                       onClick={() => void scan()}
                       disabled={
                         !image ||
-                        health?.scanner !== "textract" ||
+                        !["rekognition", "textract"].includes(health?.scanner || "") ||
                         !cloudConsent ||
                         Boolean(busy)
                       }
@@ -671,6 +679,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                       <ScanLine size={16} />
                       Scan with AWS
                     </button>
+                    {scanSummary && <p role="status">{scanSummary}</p>}
                   </div>
                   <div className="mask-list">
                     {masks.length === 0 ? (

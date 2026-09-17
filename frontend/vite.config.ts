@@ -3,9 +3,12 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  // Keep generated files outside node_modules in managed/shared workspaces.
+  cacheDir: "../.vite-cache",
   server: {
     port: 5173,
     strictPort: true,
     proxy: { "/api": "http://127.0.0.1:8000" },
+    watch: { usePolling: true, interval: 300 },
   },
 });

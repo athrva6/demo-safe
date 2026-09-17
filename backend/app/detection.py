@@ -1,4 +1,4 @@
-"""Conservative, reviewable rules over Textract words; no raw text in findings."""
+"""Conservative, reviewable rules over AWS OCR words; no raw text in findings."""
 import re
 
 RULES = [
@@ -7,7 +7,37 @@ RULES = [
     ("Possible token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b"), 0, "Matches a supported token pattern; validity was not checked."),
     ("Email address", re.compile(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+"), 0, "May identify a person or account."),
     ("Possible phone number", re.compile(r"(?<!\d)(?:\+91[ -]?)?[6-9]\d{4}[ -]?\d{5}(?!\d)"), 0, "Matches a supported Indian mobile-number format."),
+    ("AWS account ID", re.compile(r"(?<!\d)\d{12}(?!\d)"), 0, "A 12-digit AWS account identifier should usually be hidden in public screenshots."),
+    ("Possible IP address", re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])"), 0, "An IP address can reveal infrastructure or network details."),
+    ("AWS resource identifier", re.compile(r"\b(?:ami|i|sg|subnet|vpc|sgr|igw|nat|vol|snap|eni|rtb)-[0-9a-f]{8,17}\b", re.I), 0, "Identifies a specific AWS resource."),
+    ("AWS ARN", re.compile(r"\barn:aws(?:-[a-z]+)?:[A-Za-z0-9-]+:[A-Za-z0-9-]*:\d{12}:[^\s\"']+\b", re.I), 0, "Identifies an AWS account and resource."),
+    ("SSH key name", re.compile(r"--key-name\s+([^\s\"']+)", re.I), 1, "May reveal the name of an SSH key used to access an instance."),
 ]
+
+
+def rekognition_blocks(detections: list[dict]) -> list[dict]:
+    """Convert Rekognition text detections into the block shape used by the rules."""
+    child_ids: dict[str, list[str]] = {}
+    for detection in detections:
+        if detection.get("Type") == "WORD" and detection.get("ParentId") is not None:
+            child_ids.setdefault(str(detection["ParentId"]), []).append(str(detection["Id"]))
+
+    blocks = []
+    for detection in detections:
+        block_type = detection.get("Type")
+        if block_type not in {"LINE", "WORD"}:
+            continue
+        identifier = str(detection.get("Id"))
+        block = {
+            "Id": identifier,
+            "BlockType": block_type,
+            "Text": detection.get("DetectedText", ""),
+            "Geometry": detection.get("Geometry", {}),
+        }
+        if block_type == "LINE" and child_ids.get(identifier):
+            block["Relationships"] = [{"Type": "CHILD", "Ids": child_ids[identifier]}]
+        blocks.append(block)
+    return blocks
 
 
 def find_sensitive(blocks: list[dict]) -> list[dict]:
