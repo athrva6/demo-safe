@@ -1,0 +1,23 @@
+{
+  "name": "demo-safe",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others --names api,web \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": ".venv/bin/python -m uvicorn app.main:app --app-dir backend --env-file backend/.env --host 127.0.0.1 --port 8000 --reload --no-access-log",
+    "dev:web": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "test": ".venv/bin/python -m pytest backend/tests -q",
+    "check": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "prettier": "^3.9.7"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
