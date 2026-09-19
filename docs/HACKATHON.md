@@ -10,22 +10,23 @@ The measurable outcome is simple: the recipient receives only a flattened, revie
 
 The Ship It architecture uses AWS services for the complete path:
 
-| Product need | AWS service | Role in DemoSafe |
-| --- | --- | --- |
-| Web hosting | Amplify Hosting | Serves the React frontend over HTTPS |
-| Sign-in | Amazon Cognito | Authenticates owners of private shares |
-| API | API Gateway | Routes protected and public endpoints |
-| Backend | AWS Lambda | Runs the FastAPI application without servers |
-| OCR | Amazon Rekognition | Extracts text and bounding boxes from screenshots |
-| Storage | Private Amazon S3 | Stores only normalized redacted PNGs |
-| Share records | DynamoDB | Stores owner, expiry, and revocation state |
-| Operations | CloudWatch | Captures Lambda logs for debugging |
+| Product need   | AWS service                         | Role in DemoSafe                                                        |
+| -------------- | ----------------------------------- | ----------------------------------------------------------------------- |
+| Web hosting    | Amplify Hosting                     | Serves the React frontend over HTTPS                                    |
+| Sign-in        | Amazon Cognito                      | Authenticates owners of private shares                                  |
+| API            | API Gateway                         | Routes protected and public endpoints                                   |
+| Backend        | AWS Lambda                          | Runs the FastAPI application without servers                            |
+| OCR            | Amazon Rekognition                  | Extracts text and bounding boxes from screenshots                       |
+| Privacy review | Strands Agents SDK + Amazon Bedrock | Prioritizes sanitized finding categories and returns a review checklist |
+| Storage        | Private Amazon S3                   | Stores only normalized redacted PNGs                                    |
+| Share records  | DynamoDB                            | Stores owner, expiry, and revocation state                              |
+| Operations     | CloudWatch                          | Captures Lambda logs for debugging                                      |
 
 The infrastructure is defined in `infra/template.yaml`. EC2 is intentionally not required.
 
 ## Learning
 
-The team learns a first serverless deployment, Cognito JWT authentication, Rekognition OCR, S3 privacy controls, DynamoDB TTL expiry, and API Gateway routing.
+The team learns a first serverless deployment, Cognito JWT authentication, Rekognition OCR, a privacy-bounded Strands agent with Bedrock, S3 privacy controls, DynamoDB TTL expiry, and API Gateway routing.
 
 ## Execution
 
@@ -37,7 +38,7 @@ Manual masks remain available when the scanner is unavailable. Detection is advi
 
 1. Show a fictional terminal screenshot containing an email, API key, and internal URL.
 2. Upload it and run the Rekognition scan.
-3. Explain the risk labels and adjust one suggestion.
+3. Show the Strands review checklist, explain the risk labels, and adjust one suggestion.
 4. Export the flattened image after review.
 5. Create a 24-hour share link and open it privately.
 6. Revoke the link and show that it is unavailable.

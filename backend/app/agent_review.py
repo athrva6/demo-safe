@@ -3,6 +3,7 @@
 import json
 import os
 from collections import Counter
+from pathlib import Path
 from typing import Literal
 
 from botocore.config import Config
@@ -46,7 +47,7 @@ def category_counts(labels: list[str]) -> list[dict[str, int | str]]:
 
 def build_review(labels: list[str]) -> AgentReview:
     """Use Strands with Bedrock structured output over sanitized metadata."""
-    from strands import Agent
+    from strands import Agent, AgentSkills
     from strands.models import BedrockModel
 
     model = BedrockModel(
@@ -60,16 +61,17 @@ def build_review(labels: list[str]) -> AgentReview:
             retries={"total_max_attempts": 1},
         ),
     )
+    skills = AgentSkills(
+        skills=str(Path(__file__).resolve().parent.parent / "skills"),
+        strict=True,
+    )
     agent = Agent(
         model=model,
+        plugins=[skills],
         callback_handler=None,
         system_prompt=(
-            "You are DemoSafe's privacy review agent. You receive only categories "
-            "and counts from deterministic detectors, never secret values. Rank the "
-            "reported categories conservatively, explain the practical exposure in "
-            "plain language, and give a short visual review checklist. Do not claim "
-            "the screenshot is safe, do not invent findings, and do not advise the "
-            "user to publish automatically. The human makes the final decision."
+            "You are DemoSafe's privacy review agent. Activate the privacy-review "
+            "skill before evaluating the supplied detector categories."
         ),
     )
     prompt = (

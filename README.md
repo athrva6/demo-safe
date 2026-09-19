@@ -13,8 +13,9 @@ Open <http://127.0.0.1:5173>. Manual redaction works locally; AWS scanning is en
 
 ## Hackathon documents
 
+- [Start here: project, architecture, and setup guide](docs/PROJECT_GUIDE.md)
 - [Hackathon criteria and judging map](docs/HACKATHON.md)
 - [Three-minute demo video plan](docs/DEMO_VIDEO.md)
 - [Submission content](docs/SUBMISSION.md)
 - [AWS deployment guide](docs/DEPLOYMENT.md)
-- [Strands privacy agent](docs/STRANDS_AGENT.md)
+- [Strands privacy agent](docs/AGENTS.md)

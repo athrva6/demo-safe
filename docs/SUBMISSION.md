@@ -47,6 +47,7 @@ The workflow is:
 ## Core features
 
 - Amazon Rekognition OCR with bounding-box suggestions
+- Strands and Amazon Bedrock review using only sanitized finding categories and counts
 - Detection for AWS account IDs, IP addresses, AWS resource IDs, ARNs, SSH key names, emails, Indian phone numbers, labelled credentials, and supported token formats
 - Human review with adjustable suggestions and manual masks
 - Flattened PNG export that permanently replaces selected pixels
@@ -70,17 +71,19 @@ The product communicates uncertainty directly: detection can miss content, so us
 
 ## AWS architecture
 
-| AWS service | Purpose |
-| --- | --- |
-| AWS Amplify Hosting | Hosts the React frontend over HTTPS after the public deployment is completed |
-| Amazon Cognito | Handles user registration, sign-in, and JWT authentication |
-| Amazon API Gateway | Exposes protected owner routes and limited public share routes |
-| AWS Lambda | Runs the FastAPI backend without a continuously running server |
-| Amazon Rekognition | Extracts screenshot text and bounding boxes for privacy rules |
-| Amazon S3 | Privately stores only normalized, redacted published PNGs |
-| Amazon DynamoDB | Stores ownership, expiry, and revocation state with TTL |
-| Amazon CloudWatch | Stores Lambda operational logs |
-| AWS SAM / CloudFormation | Defines and deploys the reproducible serverless stack |
+| AWS service              | Purpose                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| AWS Amplify Hosting      | Hosts the React frontend over HTTPS after the public deployment is completed |
+| Amazon Cognito           | Handles user registration, sign-in, and JWT authentication                   |
+| Amazon API Gateway       | Exposes protected owner routes and limited public share routes               |
+| AWS Lambda               | Runs the FastAPI backend without a continuously running server               |
+| Amazon Rekognition       | Extracts screenshot text and bounding boxes for privacy rules                |
+| Amazon Bedrock           | Runs Amazon Nova for the structured privacy review                           |
+| Strands Agents SDK       | Loads the privacy-review skill and validates structured output               |
+| Amazon S3                | Privately stores only normalized, redacted published PNGs                    |
+| Amazon DynamoDB          | Stores ownership, expiry, and revocation state with TTL                      |
+| Amazon CloudWatch        | Stores Lambda operational logs                                               |
+| AWS SAM / CloudFormation | Defines and deploys the reproducible serverless stack                        |
 
 The infrastructure is defined in `infra/template.yaml`. The frontend never contains AWS credentials. API Gateway validates Cognito JWTs before protected requests reach Lambda.
 
@@ -107,7 +110,7 @@ The practical outcome is measurable inside the product: the sender reviews sugge
 - Cognito registration and authenticated API access work.
 - Rekognition scanning was verified end to end through the deployed Lambda execution role.
 - API Gateway CORS and Cognito authorization were tested from the browser.
-- The project currently passes 21 automated backend and frontend checks in GitHub Actions.
+- The current local validation passes 26 backend tests and the frontend production build.
 - Manual masking, PNG export, expiring links, share listing, and revocation are implemented.
 
 Before submission, add evidence for the final public frontend:
@@ -118,7 +121,7 @@ Before submission, add evidence for the final public frontend:
 
 ## What we learned
 
-We learned how to connect browser authentication, protected APIs, serverless compute, OCR, private object storage, expiry, and revocation into one working product. During deployment, we diagnosed API Gateway preflight authorization, Lambda concurrency restrictions in a student account, and service availability differences. When Textract was unavailable for the account, we validated Amazon Rekognition with a synthetic image, updated the IAM policy and OCR adapter, and verified the complete deployed path rather than presenting an untested architecture.
+We learned how to connect browser authentication, protected APIs, serverless compute, OCR, a privacy-bounded Strands agent, private object storage, expiry, and revocation into one working product. During deployment, we diagnosed API Gateway preflight authorization, Lambda concurrency restrictions in a student account, and service availability differences. When Textract was unavailable for the account, we validated Amazon Rekognition with a synthetic image, updated the IAM policy and OCR adapter, and verified the complete deployed path rather than presenting an untested architecture.
 
 We also learned an important product lesson: privacy detection should assist judgment rather than claim certainty. That led us to keep manual masks, require final confirmation, and explain that OCR may miss information.
 
