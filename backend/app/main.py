@@ -107,7 +107,14 @@ def safe_metadata(item: dict):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "mode": MODE, "scanner": os.getenv("SCAN_PROVIDER", "manual"), "agent": os.getenv("AGENT_PROVIDER", "disabled"), "max_image_bytes": MAX_BYTES}
+    return {
+        "status": "ok",
+        "mode": MODE,
+        "region": os.getenv("AWS_REGION", "local"),
+        "scanner": os.getenv("SCAN_PROVIDER", "manual"),
+        "agent": os.getenv("AGENT_PROVIDER", "disabled"),
+        "max_image_bytes": MAX_BYTES,
+    }
 
 
 @app.post("/api/scan")

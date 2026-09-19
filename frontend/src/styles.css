@@ -756,6 +756,98 @@ select {
 .shares-panel {
   padding: 22px;
 }
+.status-panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.status-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f1f7e8, #f8faf5);
+  border: 1px solid #e0ebd2;
+}
+.status-hero-icon {
+  width: 55px;
+  height: 55px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #607d39;
+  background: white;
+  border: 1px solid #dce7ce;
+  flex-shrink: 0;
+}
+.status-hero > div:nth-child(2) {
+  flex: 1;
+}
+.status-hero .eyebrow {
+  margin-bottom: 6px;
+}
+.status-hero h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.status-hero p {
+  margin: 0;
+  color: #74806b;
+  font-size: 11px;
+}
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.service-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.service-card > svg {
+  color: #78964d;
+}
+.service-card strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+.service-card p {
+  margin: 0;
+  color: #87919a;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.service-state {
+  color: #597438;
+  background: #eff7e5;
+  border: 1px solid #dbe9ca;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.service-state.muted {
+  color: #7d8790;
+  background: #f4f5f6;
+  border-color: #e5e8ea;
+}
+.status-note {
+  color: #8a949d;
+  font-size: 10px;
+  margin: 18px 2px 0;
+}
 .empty-shares {
   padding: 65px 20px;
   text-align: center;
@@ -884,6 +976,9 @@ select {
   .editor-layout {
     grid-template-columns: minmax(0, 1fr) 270px;
     gap: 16px;
+  }
+  .status-grid {
+    grid-template-columns: 1fr;
   }
   .review-panel {
     padding: 16px;

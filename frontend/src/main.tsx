@@ -1,12 +1,16 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  Activity,
   ArrowUpRight,
   Check,
+  Cloud,
   Copy,
+  Database,
   Download,
   FileImage,
   FolderOpen,
+  KeyRound,
   Link2,
   LockKeyhole,
   LogOut,
@@ -31,7 +35,13 @@ import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
 import "./styles.css";
 
-type Health = { mode: string; scanner: string; agent: string };
+type Health = {
+  status: string;
+  mode: string;
+  region: string;
+  scanner: string;
+  agent: string;
+};
 type AgentReview = {
   overall_risk: "high" | "medium" | "low";
   summary: string;
@@ -124,8 +134,107 @@ function SharedImage({ token }: { token: string }) {
   );
 }
 
+function AwsStatus({
+  health,
+  busy,
+  refresh,
+}: {
+  health?: Health;
+  busy: boolean;
+  refresh: () => void;
+}) {
+  const deployed = health?.mode === "aws";
+  const scanner = ["rekognition", "textract"].includes(health?.scanner || "");
+  const agent = health?.agent === "strands-bedrock";
+  return (
+    <section className="status-panel">
+      <div className="status-hero">
+        <div className="status-hero-icon">
+          <Cloud size={29} />
+        </div>
+        <div>
+          <span className="eyebrow">LIVE APPLICATION CHECK</span>
+          <h2>{health ? "DemoSafe is responding." : "Checking DemoSafe…"}</h2>
+          <p>
+            {deployed
+              ? `Connected to the AWS deployment in ${health?.region}.`
+              : "Connected to the local development backend."}
+          </p>
+        </div>
+        <button className="secondary" onClick={refresh} disabled={busy}>
+          <Activity size={16} />
+          Check again
+        </button>
+      </div>
+      <div className="status-grid">
+        <article className="service-card">
+          <Activity size={20} />
+          <div>
+            <strong>
+              {deployed ? "API Gateway + Lambda" : "Local API + Python"}
+            </strong>
+            <p>
+              {deployed
+                ? "The public AWS API reached the Lambda backend."
+                : "The browser reached the local development backend."}
+            </p>
+          </div>
+          <span className="service-state">
+            {health ? "Responding" : "Checking"}
+          </span>
+        </article>
+        <article className="service-card">
+          <ScanLine size={20} />
+          <div>
+            <strong>Amazon Rekognition</strong>
+            <p>OCR provider for screenshot text detection.</p>
+          </div>
+          <span className={scanner ? "service-state" : "service-state muted"}>
+            {scanner ? "Configured" : "Unavailable"}
+          </span>
+        </article>
+        <article className="service-card">
+          <Sparkles size={20} />
+          <div>
+            <strong>Strands + Amazon Bedrock</strong>
+            <p>Structured privacy priorities and review checklist.</p>
+          </div>
+          <span className={agent ? "service-state" : "service-state muted"}>
+            {agent ? "Configured" : "Disabled"}
+          </span>
+        </article>
+        <article className="service-card">
+          <Database size={20} />
+          <div>
+            <strong>Amazon S3 + DynamoDB</strong>
+            <p>Private images and expiring share controls.</p>
+          </div>
+          <span className={deployed ? "service-state" : "service-state muted"}>
+            {deployed ? "Provisioned" : "Local mode"}
+          </span>
+        </article>
+        <article className="service-card">
+          <KeyRound size={20} />
+          <div>
+            <strong>Amazon Cognito</strong>
+            <p>Authentication for private workspace operations.</p>
+          </div>
+          <span className={cloudAuth ? "service-state" : "service-state muted"}>
+            {cloudAuth ? "Configured" : "Local mode"}
+          </span>
+        </article>
+      </div>
+      <p className="status-note">
+        This page proves that the application can reach its deployed backend and
+        shows its configured providers. Show the CloudFormation stack and recent
+        CloudWatch logs as infrastructure evidence.
+      </p>
+    </section>
+  );
+}
+
 function Workspace({ signOut }: { signOut?: () => void }) {
-  const [page, setPage] = useState<"editor" | "shares">("editor");
+  const [page, setPage] = useState<"editor" | "shares" | "status">("editor");
   const [health, setHealth] = useState<Health>();
   const [image, setImage] = useState<HTMLImageElement>();
   const [filename, setFilename] = useState("");
@@ -148,13 +257,21 @@ function Workspace({ signOut }: { signOut?: () => void }) {
   const start = useRef<{ x: number; y: number } | undefined>(undefined);
   const selectedMask = masks.find((mask) => mask.id === selected);
 
+  async function refreshHealth(showBusy = false) {
+    if (showBusy) setBusy("Checking AWS services");
+    setError("");
+    try {
+      const response = await request("/api/health");
+      setHealth(await response.json());
+    } catch {
+      setHealth(undefined);
+      setError("Backend is offline. Start the project with npm run dev.");
+    } finally {
+      if (showBusy) setBusy("");
+    }
+  }
   useEffect(() => {
-    request("/api/health")
-      .then((r) => r.json())
-      .then(setHealth)
-      .catch(() =>
-        setError("Backend is offline. Start the project with npm run dev."),
-      );
+    void refreshHealth();
   }, []);
   useEffect(() => {
     if (image && canvas.current)
@@ -479,6 +596,17 @@ function Workspace({ signOut }: { signOut?: () => void }) {
             <Link2 size={18} />
             My shares
           </button>
+          <button
+            className={page === "status" ? "nav-item active" : "nav-item"}
+            onClick={() => {
+              setPage("status");
+              setError("");
+              void refreshHealth(true);
+            }}
+          >
+            <Activity size={18} />
+            AWS system status
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <span className="status-dot" />
@@ -503,7 +631,11 @@ function Workspace({ signOut }: { signOut?: () => void }) {
           <span>
             Workspace <span className="slash">/</span>{" "}
             <strong>
-              {page === "editor" ? "Screenshot editor" : "My shares"}
+              {page === "editor"
+                ? "Screenshot editor"
+                : page === "shares"
+                  ? "My shares"
+                  : "AWS system status"}
             </strong>
           </span>
           <span className="pill">
@@ -516,17 +648,23 @@ function Workspace({ signOut }: { signOut?: () => void }) {
               <span className="eyebrow">
                 {page === "editor"
                   ? "LESS EXPOSURE. MORE CONTEXT."
-                  : "YOU CONTROL THE LINK."}
+                  : page === "shares"
+                    ? "YOU CONTROL THE LINK."
+                    : "DEPLOYED. CONNECTED. OBSERVABLE."}
               </span>
               <h1>
                 {page === "editor"
                   ? "Share the work. Keep the secrets."
-                  : "Your shared screenshots."}
+                  : page === "shares"
+                    ? "Your shared screenshots."
+                    : "AWS system status."}
               </h1>
               <p>
                 {page === "editor"
                   ? "Review your screenshot, cover sensitive details, and share the final copy."
-                  : "Manage access to the screenshots you’ve published."}
+                  : page === "shares"
+                    ? "Manage access to the screenshots you’ve published."
+                    : "A presentation-ready view of the AWS services behind DemoSafe."}
               </p>
             </div>
             {page === "shares" && (
@@ -942,7 +1080,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                 )}
               </section>
             </>
-          ) : (
+          ) : page === "shares" ? (
             <section className="shares-panel">
               {shares.length === 0 ? (
                 <div className="empty-shares">
@@ -1017,6 +1155,12 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                 recent shares.
               </p>
             </section>
+          ) : (
+            <AwsStatus
+              health={health}
+              busy={Boolean(busy)}
+              refresh={() => void refreshHealth(true)}
+            />
           )}
           <footer className="workspace-footer">
             <span>DemoSafe · Built for thoughtful sharing</span>

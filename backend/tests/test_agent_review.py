@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from strands import Skill
+
 from app.agent_review import AgentReview, AgentReviewRequest, category_counts
 
 
@@ -27,3 +31,9 @@ def test_agent_review_schema_is_bounded():
         checklist=["Inspect browser tabs.", "Inspect notifications."],
     )
     assert review.overall_risk == "high"
+
+
+def test_privacy_review_skill_is_discoverable_and_valid():
+    skills_path = Path(__file__).resolve().parents[1] / "skills"
+    available = Skill.from_directory(skills_path, strict=True)
+    assert [skill.name for skill in available] == ["privacy-review"]

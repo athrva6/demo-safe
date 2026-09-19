@@ -2,6 +2,8 @@
 
 DemoSafe uses the open-source [Strands Agents SDK](https://strandsagents.com/) with Amazon Bedrock to turn deterministic detector results into a short review plan.
 
+Its review policy is packaged as an Agent Skill at `backend/skills/privacy-review/SKILL.md`. Strands discovers its metadata at startup and activates the full instructions only for a privacy review.
+
 ## What the agent does
 
 1. Amazon Rekognition reads text from the screenshot.
@@ -22,6 +24,7 @@ The agent never receives raw OCR text, detected values, image pixels, share link
 - **Runtime:** the existing AWS Lambda backend
 - **Permission:** least-privilege `bedrock:InvokeModel` for the selected foundation model
 - **Output:** a Pydantic schema validated by Strands structured output
+- **Skill:** `privacy-review`, loaded through the Strands `AgentSkills` plugin
 
 The Rekognition scan remains available if Bedrock fails. Agent errors are returned as a generic message and do not expose provider details.
 
@@ -33,6 +36,18 @@ The Rekognition scan remains available if Bedrock fails. Agent errors are return
 4. Click **Review with Strands agent**.
 5. Show the risk badge, priority findings and final checklist.
 6. Explain that the model saw categories and counts only.
+
+## AWS proof for the demo video
+
+Open **AWS system status** from the DemoSafe sidebar. It presents the backend response and configured AWS services in a clean view suitable for recording.
+
+For terminal proof, use the actual public health route:
+
+```bash
+curl -s https://a8aznijuq0.execute-api.ap-south-1.amazonaws.com/api/health | python3 -m json.tool
+```
+
+The path is `/api/health`, not `/health`. A successful response confirms that API Gateway reached the Lambda backend. Use the CloudFormation `demosafe` stack and recent CloudWatch logs as separate infrastructure evidence.
 
 ## Local development
 
