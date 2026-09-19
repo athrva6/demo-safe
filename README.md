@@ -523,17 +523,6 @@ DemoSafe does not claim to be the first redaction tool. Its hackathon differenti
 - [Strands privacy agent](docs/AGENTS.md)
 - [AWS team handoff](docs/aws/README.md)
 
-## Team
-
-**Team name:** `[ADD TEAM NAME]`
-
-| Member       | Role             | Responsibility                                         |
-| ------------ | ---------------- | ------------------------------------------------------ |
-| `[ADD NAME]` | Product and demo | Problem framing, testing, narration, and submission    |
-| `[ADD NAME]` | Frontend         | Editor, review experience, and public hosting          |
-| `[ADD NAME]` | Backend and AI   | Detection, Strands review, API, and tests              |
-| `[ADD NAME]` | AWS              | SAM deployment, evidence, monitoring, and cost control |
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
