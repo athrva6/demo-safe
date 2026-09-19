@@ -44,7 +44,6 @@ A human-controlled privacy release gate for screenshots, built with AWS serverle
 - [Competitive position](#competitive-position)
 - [Future scope](#future-scope)
 - [Documentation](#documentation)
-- [Team](#team)
 
 ---
 
