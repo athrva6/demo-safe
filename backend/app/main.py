@@ -13,6 +13,7 @@ from mangum import Mangum
 from PIL import Image, ImageOps, UnidentifiedImageError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from .agent_review import AgentReviewRequest, build_review
 from .detection import find_sensitive, rekognition_blocks
 from .storage import AwsStore, LocalStore
 
@@ -106,7 +107,7 @@ def safe_metadata(item: dict):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "mode": MODE, "scanner": os.getenv("SCAN_PROVIDER", "manual"), "max_image_bytes": MAX_BYTES}
+    return {"status": "ok", "mode": MODE, "scanner": os.getenv("SCAN_PROVIDER", "manual"), "agent": os.getenv("AGENT_PROVIDER", "disabled"), "max_image_bytes": MAX_BYTES}
 
 
 @app.post("/api/scan")
@@ -129,6 +130,20 @@ async def scan(file: UploadFile = File(...), user: str = Depends(owner)):
         # Do not expose provider errors containing request data or credentials.
         raise HTTPException(502, "AWS scan could not finish. Check backend credentials, region, and OCR permission, or continue manually.") from None
     return {"status": "complete", "provider": provider, "findings": find_sensitive(blocks), "notice": "Review every suggestion. OCR and detection can miss exposures."}
+
+
+@app.post("/api/agent/review")
+async def agent_review(payload: AgentReviewRequest, user: str = Depends(owner)):
+    if os.getenv("AGENT_PROVIDER", "disabled") != "strands-bedrock":
+        raise HTTPException(503, "The Strands privacy agent is not configured.")
+    try:
+        # Lambda handles one request per execution environment at a time; the
+        # Bedrock client has strict network timeouts, so keep this path simple.
+        result = build_review(payload.labels)
+    except Exception:
+        # The deterministic scan remains usable when Bedrock is unavailable.
+        raise HTTPException(502, "The privacy agent could not finish. Continue with the detector suggestions and manual review.") from None
+    return result.model_dump()
 
 
 @app.post("/api/shares", status_code=201)
