@@ -109,6 +109,9 @@ Resources:
         Variables:
           APP_MODE: aws
           SCAN_PROVIDER: rekognition
+          AGENT_PROVIDER: strands-bedrock
+          AGENT_MODEL_ID: amazon.nova-2-lite-v1:0
+          AGENT_REGION: us-east-1
           SHARES_BUCKET: !Ref SharesBucket
           SHARES_TABLE: !Ref SharesTable
           ALLOWED_ORIGINS: !Ref FrontendOrigin
@@ -134,6 +137,9 @@ Resources:
             - Effect: Allow
               Action: rekognition:DetectText
               Resource: "*"
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-2-lite-v1:0
       Events:
         PublicPreflight:
           Type: HttpApi

@@ -33,6 +33,7 @@ class AppClient:
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("LOCAL_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("SCAN_PROVIDER", "manual")
+    monkeypatch.setenv("AGENT_PROVIDER", "disabled")
     main.store.cache_clear()
     client = AppClient()
     yield client
@@ -147,3 +148,15 @@ def test_provider_failure_is_not_reported_as_zero_findings(client, monkeypatch):
     response = client.post("/api/scan", files={"file":("sample.png",png(),"image/png")})
     assert response.status_code == 502
     assert "secret-from-provider-error" not in response.text
+
+
+def test_agent_failure_does_not_break_detector_workflow(client, monkeypatch):
+    monkeypatch.setenv("AGENT_PROVIDER", "strands-bedrock")
+
+    def fail(_labels):
+        raise RuntimeError("provider details must not leak")
+
+    monkeypatch.setattr(main, "build_review", fail)
+    response = client.post("/api/agent/review", json={"labels": ["Email address"]})
+    assert response.status_code == 502
+    assert "provider details" not in response.text

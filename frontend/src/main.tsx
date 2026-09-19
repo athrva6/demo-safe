@@ -13,6 +13,7 @@ import {
   Plus,
   ScanLine,
   ShieldCheck,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -30,7 +31,17 @@ import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
 import "./styles.css";
 
-type Health = { mode: string; scanner: string };
+type Health = { mode: string; scanner: string; agent: string };
+type AgentReview = {
+  overall_risk: "high" | "medium" | "low";
+  summary: string;
+  priorities: Array<{
+    label: string;
+    severity: "high" | "medium" | "low";
+    action: string;
+  }>;
+  checklist: string[];
+};
 const Icon = ({ children }: { children: React.ReactNode }) => (
   <span className="icon">{children}</span>
 );
@@ -124,6 +135,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
   const [reviewed, setReviewed] = useState(false);
   const [cloudConsent, setCloudConsent] = useState(false);
   const [scanSummary, setScanSummary] = useState("");
+  const [agentReview, setAgentReview] = useState<AgentReview>();
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -180,6 +192,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
       setSelected("");
       setCloudConsent(false);
       setScanSummary("");
+      setAgentReview(undefined);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -205,6 +218,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
     setError("");
     setNotice("");
     setScanSummary("");
+    setAgentReview(undefined);
     try {
       // Normalize orientation exactly as in the editor before sending to OCR.
       const form = new FormData();
@@ -242,6 +256,34 @@ function Workspace({ signOut }: { signOut?: () => void }) {
       );
       setNotice(
         `${suggestions.length} suggestions. Review the full screenshot; detection can miss sensitive content.`,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  async function askAgent() {
+    const labels = masks
+      .filter((mask) => mask.label !== "Manual mask")
+      .map((mask) => mask.label);
+    if (!labels.length) return;
+    setBusy("Asking the Strands privacy agent");
+    setError("");
+    setAgentReview(undefined);
+    try {
+      const response = await request(
+        "/api/agent/review",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ labels }),
+        },
+        true,
+      );
+      setAgentReview(await response.json());
+      setNotice(
+        "The agent reviewed detector categories only. It did not receive OCR text or secret values.",
       );
     } catch (e) {
       setError((e as Error).message);
@@ -629,6 +671,7 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                       onClick={() => {
                         setMasks([]);
                         setSelected("");
+                        setAgentReview(undefined);
                       }}
                     >
                       Clear masks
@@ -652,11 +695,13 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                   <div className="scan-card">
                     <strong>AWS detection</strong>
                     <p>
-                      {health?.scanner === "rekognition" || health?.scanner === "textract"
+                      {health?.scanner === "rekognition" ||
+                      health?.scanner === "textract"
                         ? `Amazon ${health.scanner === "rekognition" ? "Rekognition" : "Textract"} suggests areas containing supported secrets and personal details.`
                         : "Manual redaction is ready. Connect AWS OCR to enable automatic suggestions."}
                     </p>
-                    {(health?.scanner === "rekognition" || health?.scanner === "textract") && (
+                    {(health?.scanner === "rekognition" ||
+                      health?.scanner === "textract") && (
                       <label className="check-line">
                         <input
                           type="checkbox"
@@ -671,7 +716,9 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                       onClick={() => void scan()}
                       disabled={
                         !image ||
-                        !["rekognition", "textract"].includes(health?.scanner || "") ||
+                        !["rekognition", "textract"].includes(
+                          health?.scanner || "",
+                        ) ||
                         !cloudConsent ||
                         Boolean(busy)
                       }
@@ -681,6 +728,57 @@ function Workspace({ signOut }: { signOut?: () => void }) {
                     </button>
                     {scanSummary && <p role="status">{scanSummary}</p>}
                   </div>
+                  {health?.agent === "strands-bedrock" && (
+                    <div className="agent-card">
+                      <div className="agent-title">
+                        <Sparkles size={15} />
+                        <strong>Strands privacy agent</strong>
+                      </div>
+                      <p>
+                        Get a risk order and final visual checklist. Only
+                        finding categories and counts are sent to Amazon
+                        Bedrock—never OCR text or detected values.
+                      </p>
+                      <button
+                        className="secondary full"
+                        onClick={() => void askAgent()}
+                        disabled={
+                          !masks.some((mask) => mask.label !== "Manual mask") ||
+                          Boolean(busy)
+                        }
+                      >
+                        <Sparkles size={15} />
+                        Review with Strands agent
+                      </button>
+                      {agentReview && (
+                        <div className="agent-result" role="status">
+                          <span
+                            className={`risk-badge risk-${agentReview.overall_risk}`}
+                          >
+                            {agentReview.overall_risk} risk
+                          </span>
+                          <p>{agentReview.summary}</p>
+                          <strong>Priority findings</strong>
+                          <ul>
+                            {agentReview.priorities.map((priority) => (
+                              <li
+                                key={`${priority.label}-${priority.severity}`}
+                              >
+                                <b>{priority.label}</b> · {priority.severity}
+                                <small>{priority.action}</small>
+                              </li>
+                            ))}
+                          </ul>
+                          <strong>Before sharing</strong>
+                          <ul>
+                            {agentReview.checklist.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="mask-list">
                     {masks.length === 0 ? (
                       <div className="empty-masks">

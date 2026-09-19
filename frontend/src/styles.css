@@ -457,6 +457,73 @@ small {
 .scan-card .secondary {
   font-size: 10px;
 }
+.agent-card {
+  background: #f7f5ff;
+  border: 1px solid #e7e1f6;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 0 0 15px;
+}
+.agent-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #67518d;
+  font-size: 11px;
+}
+.agent-card > p,
+.agent-result > p {
+  color: #766b88;
+  font-size: 9px;
+  line-height: 1.55;
+  margin: 8px 0 11px;
+}
+.agent-result {
+  border-top: 1px solid #e4ddef;
+  margin-top: 13px;
+  padding-top: 12px;
+  font-size: 9px;
+}
+.agent-result > strong {
+  display: block;
+  font-size: 9px;
+  margin-top: 10px;
+  color: #5e526e;
+}
+.agent-result ul {
+  margin: 6px 0 0;
+  padding-left: 17px;
+  color: #71677f;
+  line-height: 1.5;
+}
+.agent-result li {
+  margin: 5px 0;
+}
+.agent-result li small {
+  display: block;
+  color: #8a8195;
+}
+.risk-badge {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.risk-high {
+  background: #fde7e3;
+  color: #963f32;
+}
+.risk-medium {
+  background: #fff0ce;
+  color: #805e17;
+}
+.risk-low {
+  background: #e7f3dc;
+  color: #557438;
+}
 .empty-masks {
   text-align: center;
   color: #b2bdc6;
