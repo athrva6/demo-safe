@@ -4,6 +4,8 @@
 
 **Share the work. Keep the secrets.**
 
+Built by **Team VisionX** for **Bharat Builds: First Commit** — a WeMakeDevs × AWS hackathon.
+
 A human-controlled privacy release gate for screenshots, built with AWS serverless services, Amazon Rekognition, Strands Agents, and Amazon Bedrock.
 
 [![AWS](https://img.shields.io/badge/Built%20on-AWS-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/)
@@ -16,36 +18,6 @@ A human-controlled privacy release gate for screenshots, built with AWS serverle
 </div>
 
 ---
-
-## Table of contents
-
-- [Live deployment](#live-deployment)
-- [Executive summary](#executive-summary)
-- [Problem statement](#problem-statement)
-- [Why DemoSafe](#why-demosafe)
-- [Why users can trust DemoSafe](#why-users-can-trust-demosafe)
-- [Supported screenshot scope](#supported-screenshot-scope)
-- [How it works](#how-it-works)
-- [Privacy architecture](#privacy-architecture)
-- [How the AI agent works](#how-the-ai-agent-works)
-- [Core features](#core-features)
-- [Demo scenario](#demo-scenario)
-- [Before and after](#before-and-after)
-- [AWS architecture](#aws-architecture)
-- [Responsible AI and privacy](#responsible-ai-and-privacy)
-- [Technical innovation](#technical-innovation)
-- [Hackathon criteria](#hackathon-criteria)
-- [Challenges and lessons](#challenges-and-lessons)
-- [Validation and current status](#validation-and-current-status)
-- [Known limitations](#known-limitations)
-- [Repository structure](#repository-structure)
-- [Getting started](#getting-started)
-- [AWS deployment](#aws-deployment)
-- [Demo instructions](#demo-instructions)
-- [Competitive position](#competitive-position)
-- [Future scope](#future-scope)
-- [Documentation](#documentation)
-- [Team](#team)
 
 ---
 
