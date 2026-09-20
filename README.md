@@ -4,8 +4,6 @@
 
 **Share the work. Keep the secrets.**
 
-Built by **Team VisionX** for **Bharat Builds: First Commit** — a WeMakeDevs × AWS hackathon.
-
 A human-controlled privacy release gate for screenshots, built with AWS serverless services, Amazon Rekognition, Strands Agents, and Amazon Bedrock.
 
 [![AWS](https://img.shields.io/badge/Built%20on-AWS-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/)
@@ -48,19 +46,6 @@ A human-controlled privacy release gate for screenshots, built with AWS serverle
 - [Documentation](#documentation)
 
 ---
-
-## Live deployment
-
-DemoSafe is publicly deployed on AWS Amplify in the Mumbai region.
-
-| Resource | Public link | Purpose |
-| --- | --- | --- |
-| DemoSafe web application | [Open DemoSafe](https://production.dx2z6eik8hnh4.amplifyapp.com) | The public React application for sign-in, screenshot review, redaction, and controlled sharing. |
-| API health check | [Open API health](https://a8aznijuq0.execute-api.ap-south-1.amazonaws.com/api/health) | Runtime proof that the AWS API is responding and identifies the active scanner and review agent. |
-
-The hosted frontend is served by **AWS Amplify**. Its requests go through **API Gateway** to **AWS Lambda**. Cognito handles identity, Rekognition handles OCR, Bedrock powers the Strands review agent, and S3 with DynamoDB supports private, expiring shares.
-
-> The API root is intentionally not a webpage. For deployment proof, open the API health link above, which returns JSON.
 
 ## Executive summary
 
