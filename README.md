@@ -19,6 +19,34 @@ A human-controlled privacy release gate for screenshots, built with AWS serverle
 
 ---
 
+## Table of contents
+
+- [Executive summary](#executive-summary)
+- [Problem statement](#problem-statement)
+- [Why DemoSafe](#why-demosafe)
+- [Why users can trust DemoSafe](#why-users-can-trust-demosafe)
+- [Supported screenshot scope](#supported-screenshot-scope)
+- [How it works](#how-it-works)
+- [Privacy architecture](#privacy-architecture)
+- [How the AI agent works](#how-the-ai-agent-works)
+- [Core features](#core-features)
+- [Demo scenario](#demo-scenario)
+- [Before and after](#before-and-after)
+- [AWS architecture](#aws-architecture)
+- [Responsible AI and privacy](#responsible-ai-and-privacy)
+- [Technical innovation](#technical-innovation)
+- [Hackathon criteria](#hackathon-criteria)
+- [Challenges and lessons](#challenges-and-lessons)
+- [Validation and current status](#validation-and-current-status)
+- [Known limitations](#known-limitations)
+- [Repository structure](#repository-structure)
+- [Getting started](#getting-started)
+- [AWS deployment](#aws-deployment)
+- [Demo instructions](#demo-instructions)
+- [Competitive position](#competitive-position)
+- [Future scope](#future-scope)
+- [Documentation](#documentation)
+
 ---
 
 ## Live deployment
@@ -508,17 +536,6 @@ DemoSafe does not claim to be the first redaction tool. Its hackathon differenti
 - [AWS deployment guide](docs/DEPLOYMENT.md)
 - [Strands privacy agent](docs/AGENTS.md)
 - [AWS team handoff](docs/aws/README.md)
-
-## Team
-
-**Team name:** `[ADD TEAM NAME]`
-
-| Member       | Role             | Responsibility                                         |
-| ------------ | ---------------- | ------------------------------------------------------ |
-| `[ADD NAME]` | Product and demo | Problem framing, testing, narration, and submission    |
-| `[ADD NAME]` | Frontend         | Editor, review experience, and public hosting          |
-| `[ADD NAME]` | Backend and AI   | Detection, Strands review, API, and tests              |
-| `[ADD NAME]` | AWS              | SAM deployment, evidence, monitoring, and cost control |
 
 ## License
 
